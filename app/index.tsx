@@ -1,25 +1,30 @@
 import StandardButton from "@/components/StandardButton";
+import TitleBar from "@/components/TitleBar";
 import { router } from "expo-router";
-import { ScrollView } from "react-native";
+import { ScrollView, View } from "react-native";
 
 export default function Index() {
   return (
-    <ScrollView
+    <View>
+      <View style={{height: 100}}>
+        <TitleBar title="shleeb"></TitleBar>
+      </View>
+      <ScrollView
       contentContainerStyle={{
-        flex: 1,
         height: "100%",
         justifyContent: "center",
         alignItems: "center",
       }}
     >
-      <StandardButton 
-        text="Host" 
-        onClick={()=>router.push("/host/createLobby")}>
-      </StandardButton>
-      <StandardButton 
-        text="Join" 
-        onClick={()=>router.push("/player/joinLobby")}>
-      </StandardButton>
-    </ScrollView>
+        <StandardButton 
+          text="Host" 
+          onClick={()=>router.push("/host/createLobby")}>
+        </StandardButton>
+        <StandardButton 
+          text="Join" 
+          onClick={()=>router.push("/player/joinLobby")}>
+        </StandardButton>
+      </ScrollView>
+    </View>
   );
 }

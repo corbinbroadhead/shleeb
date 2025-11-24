@@ -1,18 +1,50 @@
-import { Pressable, StyleSheet } from "react-native";
+import { Alert, Pressable, StyleSheet } from "react-native";
 
 type Props = {
-  icon: React.ReactNode; 
-  size: number;            
+  icon: React.ReactNode;
+  size: number;
   onClick: () => void;
+  backgroundColor?: string;
+  showConfirmation?: boolean;
+  actionMessage?: string;
 };
 
-export default function IconButton({ icon, size, onClick }: Props) {
+export default function IconButton({
+  icon,
+  size,
+  onClick,
+  backgroundColor = "red",
+  showConfirmation = false,
+  actionMessage = "Are you sure?",
+}: Props) {
+  
+  const handlePress = () => {
+    if (!showConfirmation) {
+      onClick();
+      return;
+    }
+
+    Alert.alert(
+      actionMessage,
+      "",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", style: "destructive", onPress: onClick },
+      ]
+    );
+  };
+
   return (
     <Pressable
-      onPress={onClick}
+      onPress={handlePress}
       style={[
         styles.button_style,
-        { width: size, height: size, borderRadius: size / 2 }
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: backgroundColor,
+        },
       ]}
     >
       {icon}
@@ -22,7 +54,6 @@ export default function IconButton({ icon, size, onClick }: Props) {
 
 const styles = StyleSheet.create({
   button_style: {
-    backgroundColor: "red",
     justifyContent: "center",
     alignItems: "center",
 
@@ -31,8 +62,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.7,
     shadowRadius: 4,
-
-    // Shadow (Android)
-    elevation: 5,
   },
 });

@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Button, ScrollView, Text, View } from "react-native";
 
 export default function CreateLobby() {
-  const { createSession, players } = useHostGame();
+  const { createSession, players, sendBroadcast } = useHostGame();
 
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
@@ -15,6 +15,14 @@ export default function CreateLobby() {
 
   // guard to ensure we only auto-start once per mount (protects against HMR double-run)
   const startedRef = useRef(false);
+
+  async function handleStartGame() {
+  // Notify all players
+  await sendBroadcast("START", { time: Date.now() });
+
+  // Move host to game screen
+  router.push('/host/game');
+}
 
   async function initSession() {
     // guard (extra protection)
@@ -45,7 +53,7 @@ export default function CreateLobby() {
   // BEFORE session is ready: show loading state (auto-starting)
   if (!sessionReady) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20, paddingTop: 70 }}>
         {loading ? (
           <>
             <View style={{width: "100%", height:"100%", alignContent: "flex-start"}}>
@@ -74,50 +82,66 @@ export default function CreateLobby() {
 
   // AFTER sessionReady === true: show lobby active UI (same route)
   return (
-    <ScrollView contentContainerStyle={{ flex: 1, padding: 20, justifyContent: "space-between" }}>
-      <View>
-        <Text style={{ fontSize: 24, marginBottom: 10 }}>Lobby Active</Text>
-        <Text style={{ marginBottom: 20 }}>Waiting for players...</Text>
+    <View style={{ flex: 1 }}>
+      <View style={{height: 50, backgroundColor: "purple"}}></View>
 
-        <Text style={{ fontSize: 18, marginBottom: 10 }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          padding: 20,
+          justifyContent: "space-between",
+        }}
+      >
+        <View>
+
+          <Text style={{ fontSize: 24, marginBottom: 10 }}>Lobby Active</Text>
+          <Text style={{ marginBottom: 20 }}>Waiting for players...</Text>
+
+          <Text style={{ fontSize: 18, marginBottom: 10 }}>
             Players: {players.length}
-        </Text>
+          </Text>
 
-        {players.map((p: any) => (
+          {players.map((p: any) => (
             <Text key={p.id} style={{ marginVertical: 4 }}>
-            • {p.name || p.id}
+              • {p.name || p.id}
             </Text>
-        ))}
+          ))}
+        </View>
 
-      </View>
-      <View style={{width: "100%", alignItems: "center", marginBottom: 20}}>
-        <StandardButton
-            onClick={() => { /* your Start Game handler */ }}
-            text="Start Game"
-        />
-        <DestructiveButton
+        {/* Bottom buttons */}
+        <View
+          style={{
+            width: "100%",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <StandardButton onClick={handleStartGame} text="Start Game" />
+
+          <DestructiveButton
             text="Close Lobby"
             onClick={async () => {
-            try {
+              try {
                 if (players.length === 0) {
-                router.back();
-                return;
+                  router.back();
+                  return;
                 }
 
                 const ids = players.map((p: any) => p.id);
                 const { data, error } = await supabase
-                .from("players")
-                .delete()
-                .in("id", ids);
+                  .from("players")
+                  .delete()
+                  .in("id", ids);
 
                 console.log({ data, error });
                 router.back();
-            } catch (exceptionVar) {
+              } catch (exceptionVar) {
                 console.log(exceptionVar);
-            }
+              }
             }}
-        />
-      </View>
-    </ScrollView>
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
 }

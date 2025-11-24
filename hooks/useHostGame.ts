@@ -4,7 +4,6 @@ import { useShleebChannel } from './useShleebChannel';
 
 export function useHostGame() {
   const channelRef = useShleebChannel();
-
   const [players, setPlayers] = useState([]);
   const [buzzes, setBuzzes] = useState([]);
 
@@ -25,7 +24,7 @@ export function useHostGame() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [channelRef.current]);
+  }, []);
 
   // Listen for player table changes
   useEffect(() => {
@@ -38,7 +37,7 @@ export function useHostGame() {
           schema: 'public',
           table: 'players'
         },
-        (payload) => {
+        () => {
           fetchPlayers();
         }
       )
@@ -74,11 +73,30 @@ export function useHostGame() {
     return { started: true };
   }
 
+  // -------------------------------------------------------
+  // NEW: Generic function to broadcast events to the channel
+  // -------------------------------------------------------
+  async function sendBroadcast(eventName, payload = {}) {
+    const channel = channelRef.current;
+    if (!channel) {
+      console.warn("sendBroadcast called but channelRef.current is null");
+      return;
+    }
+
+    console.log("Sending event"+eventName)
+
+    await channel.send({
+      type: "broadcast",
+      event: eventName,
+      payload,
+    });
+  }
 
   return {
     players,
     buzzes,
     resetBuzzes,
-    createSession
+    createSession,
+    sendBroadcast,   // ← return it
   };
 }

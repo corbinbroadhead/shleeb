@@ -1,16 +1,29 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Alert, Pressable, StyleSheet, Text } from "react-native";
 
 type Props = {
   text: string;
   onClick: () => void;
+  actionMessage?: string;
 };
 
-export default function DestructiveButton({ text, onClick }: Props) {
+export default function DestructiveButton({
+  text,
+  onClick,
+  actionMessage,
+}: Props) {
+  const handlePress = () => {
+    Alert.alert(
+      actionMessage ?? "Are you sure?",
+      "",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", style: "destructive", onPress: onClick },
+      ]
+    );
+  };
+
   return (
-    <Pressable
-      onPress={onClick}
-      style={styles.button_style}
-    >
+    <Pressable onPress={handlePress} style={styles.button_style}>
       <Text style={styles.text_style}>{text}</Text>
     </Pressable>
   );

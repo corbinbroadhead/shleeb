@@ -1,3 +1,4 @@
+import { FontAwesome5 } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { router } from "expo-router";
 import React from "react";
@@ -7,23 +8,42 @@ import IconButton from "./IconButton";
 type Props = {
   title: string;
   backgroundColor?: string;
+  buttonAction?: "EXIT" | "BACK";
 };
 
 export default function PlayerTitleBar({
   title,
-  backgroundColor = "#fff",
+  backgroundColor = "purple",
+  buttonAction = "EXIT",
 }: Props) {
+  const icon =
+    buttonAction === "BACK" ? (
+      <FontAwesome5 name="chevron-circle-left" size={32} color="purple" />
+    ) : (
+      <Entypo name="cross" size={32} color="white" />
+    );
+  const buttonBackgroundColor = buttonAction === "BACK" ? "white" : "red"
+  const showConfirmation = buttonAction === "BACK" ? false : true;
+  const confirmationMessage = showConfirmation ? "Exit the lobby?" : ""
+
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.left}>
-        <IconButton icon={<Entypo name="cross" size={32} color="white" />} size={32} onClick={()=>router.back()}></IconButton>
+        <IconButton
+          icon={icon}
+          size={32}
+          onClick={() => router.back()}
+          backgroundColor={buttonBackgroundColor}
+          showConfirmation={showConfirmation}
+          actionMessage={confirmationMessage}
+        />
       </View>
 
       <View style={styles.center}>
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      {/* Spacer to balance the layout so title is centered */}
+      {/* Spacer to keep title centered */}
       <View style={styles.right}></View>
     </View>
   );
@@ -32,10 +52,11 @@ export default function PlayerTitleBar({
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: 60,
+    height: 100,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
+    paddingTop: 40,
   },
   left: {
     width: 40,
@@ -52,5 +73,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
+    color: "white"
   },
 });
