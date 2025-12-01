@@ -1,43 +1,139 @@
+// usePlayerGame.ts
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../utils/supabase";
 import { useShleebChannel } from "./useShleebChannel";
 
 export function usePlayerGame() {
   const channelRef = useShleebChannel();
+
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [game, setGame] = useState<"NEXT" | "EXPIRE" | "END">("NEXT");
+
+  // ensure we only attach handlers once for the lifetime of the channel
   const attachedRef = useRef(false);
 
-  if (channelRef.current && !attachedRef.current) {
-    attachedRef.current = true;
+  // Debug logging of game changes
+  useEffect(() => {
+    console.log("[player] game UPDATED →", game);
+  }, [game]);
 
-    channelRef.current.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        console.log("[player] Attaching START listener...");
+  useEffect(() => {
+    console.log("[player] useEffect RUNNING");
+    const channel = channelRef.current;
+    console.log("[player] channelRef.current =", !!channel ? channel.subTopic || channel.topic : channel);
 
-        channelRef.current!.on(
-          "broadcast",
-          { event: "START" },
-          (payload) => {
-            console.log("[player] Event received!", payload);
-            router.push("/player/game");
-          }
-        );
+    if (!channel) {
+      console.log("[player] No channel available yet, returning.");
+      return;
+    }
+
+    // helper that actually attaches the event handlers (idempotent via attachedRef)
+    const attachHandlers = () => {
+      if (attachedRef.current) {
+        console.log("[player] Handlers already attached — skipping.");
+        return;
+      }
+      attachedRef.current = true;
+
+      console.log("[player] Attaching realtime handlers to channel (idempotent).");
+
+      // START → navigate
+      channel.on("broadcast", { event: "START" }, () => {
+        console.log("[player] START received → navigating");
+        try {
+          router.push("/player/game");
+        } catch (err) {
+          console.warn("[player] router.push failed:", err);
+        }
+      });
+
+      // NEXT → update state
+      channel.on("broadcast", { event: "NEXT" }, () => {
+        console.log("[player] NEXT received");
+        setGame("NEXT");
+      });
+
+      // EXPIRE
+      channel.on("broadcast", { event: "EXPIRE" }, () => {
+        console.log("[player] EXPIRE received");
+        setGame("EXPIRE");
+      });
+
+      // END
+      channel.on("broadcast", { event: "END" }, () => {
+        console.log("[player] END received");
+        setGame("END");
+      });
+    };
+
+    // If channel is already subscribed/joined, attach immediately.
+    // Supabase client may expose state or joinedOnce — check both.
+    const isAlreadySubscribed =
+      // prefer an explicit property if present
+      // joinedOnce was present in your log; check it
+      (channel as any).joinedOnce === true ||
+      // some clients expose state
+      (channel as any).state === "joined" ||
+      (channel as any).state === "joined" ||
+      // fallback: presence of a socket with readyState OPEN (1) may indicate connected
+      ((channel as any).socket && (channel as any).socket.conn && (channel as any).socket.conn.readyState === 1);
+
+    if (isAlreadySubscribed) {
+      console.log("[player] Channel already subscribed/joined — attaching handlers immediately.");
+      attachHandlers();
+    } else {
+      console.log("[player] Channel not yet subscribed — calling subscribe() and attaching handlers on SUBSCRIBED.");
+    }
+
+    // subscribe() returns a Push/Subscription-like object and calls its callback with status updates
+    const subscription = channel.subscribe((status: string) => {
+      console.log("[player] subscribe() STATUS:", status);
+      if (status === "SUBSCRIBED" || status === "JOINED") {
+        console.log("[player] subscribe() indicates SUBSCRIBED/JOINED — attaching handlers now.");
+        attachHandlers();
       }
     });
-  }
 
+    // Defensive: if subscribe already returned a truthy value and channel appears joined, attach
+    // (This can catch race conditions where subscribe resolves synchronous before the callback was attached)
+    try {
+      if (!attachedRef.current) {
+        // double-check again after calling subscribe
+        const maybeJoined =
+          (channel as any).joinedOnce === true ||
+          (channel as any).state === "joined" ||
+          ((channel as any).socket && (channel as any).socket.conn && (channel as any).socket.conn.readyState === 1);
+
+        if (maybeJoined) {
+          console.log("[player] After subscribe() call, channel seems joined — attaching handlers (race guard).");
+          attachHandlers();
+        }
+      }
+    } catch (e) {
+      // swallow any property access errors
+    }
+
+    // Cleanup on unmount: unsubscribe from the channel and allow re-attach logic if remounted
+    return () => {
+      console.log("[player] CLEANUP: unsubscribing channel and resetting attachedRef");
+      try {
+        channel.unsubscribe();
+      } catch (err) {
+        console.warn("[player] channel.unsubscribe() threw:", err);
+      }
+      attachedRef.current = false;
+    };
+    // channelRef is stable (returned by useShleebChannel) so using it in deps is fine
+  }, [channelRef]);
+
+  // --- Join game ---
   async function joinGame(playerName: string) {
-    setLoading(true);
-
     const { data, error } = await supabase
       .from("players")
       .insert([{ name: playerName }])
       .select("id")
       .single();
-
-    setLoading(false);
 
     if (error) return { success: false, error };
 
@@ -45,22 +141,29 @@ export function usePlayerGame() {
     return { success: true, id: data.id };
   }
 
+  // --- Buzz ---
   function buzz() {
     if (!channelRef.current || !playerId) return;
+    console.log("[player] Sending BUZZ event");
 
-    console.log("Sending BUZZ event");
-
-    channelRef.current.send({
-      type: "broadcast",
-      event: "buzz",
-      payload: { playerId, timestamp: Date.now() },
-    });
+    try {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "buzz",
+        payload: {
+          playerId,
+          timestamp: Date.now(),
+        },
+      });
+    } catch (err) {
+      console.warn("[player] failed to send buzz:", err);
+    }
   }
 
   return {
-    loading,
     joinGame,
     buzz,
     playerId,
+    game,
   };
 }
