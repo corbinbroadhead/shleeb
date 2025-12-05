@@ -7,6 +7,7 @@ export default function JoinLobby() {
   const { joinGame, playerId, loading } = usePlayerGame();
   const form = useJoinForm(joinGame);
   const title = "Welcome, "+form.name+"!";
+
   if (form.hasJoined) {
     return (
       <View>
@@ -20,7 +21,6 @@ export default function JoinLobby() {
       </View>
     );
   }
-
   return (
     <View>
       <PlayerTitleBar title="Join the Lobby" buttonAction="BACK"></PlayerTitleBar>
@@ -45,7 +45,6 @@ export default function JoinLobby() {
             {form.error}
           </Text>
         )}
-
         <Button
           title={loading ? "Joining..." : "Join Game"}
           disabled={loading}

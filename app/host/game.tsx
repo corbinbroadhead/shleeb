@@ -2,6 +2,7 @@ import AwardPointsModal from "@/components/AwardPointsModal";
 import BuzzList from "@/components/BuzzList";
 import Leaderboard from "@/components/Leaderboard";
 import ScoreboardModal from "@/components/ScoreboardModal";
+import SettingsModal from "@/components/SettingsModal";
 import { promptSets } from "@/data/promptSets";
 import { useHostGame } from "@/hooks/useHostGame";
 import useNextWait from "@/hooks/useNextWait";
@@ -22,6 +23,8 @@ export default function HostGame() {
 
   // Host may also see the scoreboard
   const [scoreboardVisible, setScoreboardVisible] = useState(false);
+
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   // Prompt set management
   //const [prompt, setPrompt] = useState(null);
@@ -131,6 +134,19 @@ export default function HostGame() {
     return <Button title="View Scoreboard" onPress={() => setScoreboardVisible(true)}/>;
   }
 
+  function renderSettingsButton() {
+    if (gameState === "END") return null;
+    return <Button title="Settings" onPress={() => setSettingsVisible(true)}/>;
+  }
+
+  function renderSettings() {
+    if (gameState === "END") return null;
+    return <SettingsModal 
+              visible={settingsVisible} 
+              onClose={() => setSettingsVisible(false)} 
+            />
+  }
+
   function renderScoreboard() {
     if (gameState === "END") return null;
     return <ScoreboardModal
@@ -212,7 +228,11 @@ export default function HostGame() {
         {/* Scoreboard Modal */}
         {renderScoreboard()}
         {renderScoreboardButton()}
-        
+
+        {/* Settings Modal */}
+        {renderSettings()}
+        {renderSettingsButton()}
+
         {/* TEMPORARY DEBUG NAV */}
         <View style={{ marginTop: 20 }}>
           <Button title="Back" onPress={() => router.back()} />

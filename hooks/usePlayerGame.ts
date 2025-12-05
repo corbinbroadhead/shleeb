@@ -1,4 +1,6 @@
 // usePlayerGame.ts
+import { useBuzzer } from "@/contexts/buzzerContext";
+import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Vibration } from 'react-native';
@@ -7,6 +9,7 @@ import { useShleebChannel } from "./useShleebChannel";
 
 export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName?: string | null) {
   const channelRef = useShleebChannel();
+  const { buzzEnabled } = useBuzzer();
 
   const [playerId, setPlayerId] = useState<string | null>(initialPlayerId || null);
   const playerIdRef = useRef<string | null>(null);
@@ -19,6 +22,12 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
 
   // ensure we only attach handlers once for the lifetime of the channel
   const attachedRef = useRef(false);
+
+  function phaseChangeFeedback() {
+    if (buzzEnabled) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    }
+  }
 
   // Debug logging of game changes
   useEffect(() => {
@@ -58,6 +67,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
         console.log("[player] START received → navigating");
         console.log("[player] playerId at navigation time:", playerId);
         setCurrentPrompt(payload.payload.prompt);
+        phaseChangeFeedback();
         try {
           router.push({
             pathname: "/player/game",
@@ -72,6 +82,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
       channel.on("broadcast", { event: "NEXT" }, (payload) => {
         console.log("[player] NEXT received");
         setCurrentPrompt(payload.payload.prompt)
+        phaseChangeFeedback();
         console.log("[player] Payload: ",payload);
         console.log("[player] Current prompt set to: ",currentPrompt);
         setGame("LOADING");
@@ -182,7 +193,9 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
   }
 
   function buzzerFeedback() {
-    Vibration.vibrate([0, 200, 50, 200]);
+    if (buzzEnabled) {
+      Vibration.vibrate([0, 200, 50, 200]);
+    }
   }
 
   // --- Buzz ---

@@ -1,5 +1,6 @@
+import { useBuzzer } from '@/contexts/buzzerContext';
+import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { Vibration } from 'react-native';
 import { supabase } from '../utils/supabase';
 import { useShleebChannel } from './useShleebChannel';
 
@@ -7,9 +8,12 @@ export function useHostGame() {
   const channelRef = useShleebChannel();
   const [players, setPlayers] = useState([]);
   const [buzzes, setBuzzes] = useState([]);
+  const { buzzEnabled } = useBuzzer();
 
   function buzzerFeedback() {
-    Vibration.vibrate([0, 100, 25, 100]);
+    if(buzzEnabled) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   }
   // -------------------------------------------------------------
   // Listen for realtime buzzes from players
