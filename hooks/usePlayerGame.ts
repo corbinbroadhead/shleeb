@@ -1,14 +1,21 @@
 // usePlayerGame.ts
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import { Vibration } from 'react-native';
 import { supabase } from "../utils/supabase";
 import { useShleebChannel } from "./useShleebChannel";
 
-export function usePlayerGame() {
+export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName?: string | null) {
   const channelRef = useShleebChannel();
 
-  const [playerId, setPlayerId] = useState<string | null>(null);
-  const [game, setGame] = useState<"NEXT" | "EXPIRE" | "END">("NEXT");
+  const [playerId, setPlayerId] = useState<string | null>(initialPlayerId || null);
+  const playerIdRef = useRef<string | null>(null);
+
+  const [storedPlayerName, setStoredPlayerName] = useState<string | null>(null);
+  const storedPlayerNameRef = useRef<string | null>(null);
+
+  const [game, setGame] = useState<"NEXT" | "EXPIRE" | "END" | "LOADING">("NEXT");
+  const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
 
   // ensure we only attach handlers once for the lifetime of the channel
   const attachedRef = useRef(false);
@@ -17,6 +24,14 @@ export function usePlayerGame() {
   useEffect(() => {
     console.log("[player] game UPDATED →", game);
   }, [game]);
+
+  useEffect(()=> {
+    playerIdRef.current = playerId;
+  }, [playerId]);
+
+  useEffect(()=> {
+    storedPlayerNameRef.current = storedPlayerName;
+  }, [storedPlayerName]);
 
   useEffect(() => {
     console.log("[player] useEffect RUNNING");
@@ -39,19 +54,29 @@ export function usePlayerGame() {
       console.log("[player] Attaching realtime handlers to channel (idempotent).");
 
       // START → navigate
-      channel.on("broadcast", { event: "START" }, () => {
+      channel.on("broadcast", { event: "START" }, (payload) => {
         console.log("[player] START received → navigating");
+        console.log("[player] playerId at navigation time:", playerId);
+        setCurrentPrompt(payload.payload.prompt);
         try {
-          router.push("/player/game");
+          router.push({
+            pathname: "/player/game",
+            params: { playerId: playerIdRef.current, playerName: storedPlayerNameRef.current, initialPrompt: payload.payload.prompt }
+          });
         } catch (err) {
           console.warn("[player] router.push failed:", err);
         }
       });
 
       // NEXT → update state
-      channel.on("broadcast", { event: "NEXT" }, () => {
+      channel.on("broadcast", { event: "NEXT" }, (payload) => {
         console.log("[player] NEXT received");
-        setGame("NEXT");
+        setCurrentPrompt(payload.payload.prompt)
+        console.log("[player] Payload: ",payload);
+        console.log("[player] Current prompt set to: ",currentPrompt);
+        setGame("LOADING");
+        setTimeout(() => setGame("NEXT"), 0);
+        //setGame("NEXT");
       });
 
       // EXPIRE
@@ -65,6 +90,18 @@ export function usePlayerGame() {
         console.log("[player] END received");
         setGame("END");
       });
+
+      // KICK
+      channel.on("broadcast", { event: "KICK" }, async (payload) => {
+        console.log("[player] KICK received, player: ",payload.payload.playerId);
+          if (playerIdRef.current == payload.payload.playerId) {
+          try {
+            router.push({pathname:"/", params:{notice: "KICKED"}});
+          } catch (err) {
+            console.warn("[player] router.push failed:", err);
+          }
+        }
+      })
     };
 
     // If channel is already subscribed/joined, attach immediately.
@@ -137,21 +174,29 @@ export function usePlayerGame() {
 
     if (error) return { success: false, error };
 
+    console.log("[player] Setting playerId to: ", data.id)
+    console.log("[player] Setting playerName to:", playerName);
     setPlayerId(data.id);
+    setStoredPlayerName(playerName);
     return { success: true, id: data.id };
   }
 
-  // --- Buzz ---
-  function buzz() {
-    if (!channelRef.current || !playerId) return;
-    console.log("[player] Sending BUZZ event");
+  function buzzerFeedback() {
+    Vibration.vibrate([0, 200, 50, 200]);
+  }
 
+  // --- Buzz ---
+  function buzz(id, playerName) {
+    if (!channelRef.current || !id) return;
+    console.log("[player] Sending BUZZ event");
     try {
+      buzzerFeedback();
       channelRef.current.send({
         type: "broadcast",
         event: "buzz",
         payload: {
-          playerId,
+          id,
+          playerName,
           timestamp: Date.now(),
         },
       });
@@ -160,10 +205,28 @@ export function usePlayerGame() {
     }
   }
 
+  // --- Leave ---
+  function leave() {
+    if (!channelRef.current) return;
+    const id = playerId;
+    console.log("[player] Leaving game, player:",id);
+    try {
+      channelRef.current.send({
+        type: "broadcast",
+        event: "leave",
+        payload: {id}
+      })
+    } catch (err) {
+      console.warn("[player] Unable to leave:",err);
+    }
+  }
+
   return {
     joinGame,
     buzz,
     playerId,
     game,
+    currentPrompt,
+    leave
   };
 }

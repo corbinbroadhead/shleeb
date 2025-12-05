@@ -1,49 +1,89 @@
+import AwardPointsModal from "@/components/AwardPointsModal";
+import BuzzList from "@/components/BuzzList";
+import Leaderboard from "@/components/Leaderboard";
+import ScoreboardModal from "@/components/ScoreboardModal";
+import { promptSets } from "@/data/promptSets";
 import { useHostGame } from "@/hooks/useHostGame";
 import useNextWait from "@/hooks/useNextWait";
-import { router } from "expo-router";
+import { usePlayersRealtime } from "@/hooks/usePlayersRealtime";
+import { usePromptManager } from "@/hooks/usePromptManager";
+import { awardPoints } from "@/utils/awardPoints";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Button, ScrollView, Text, View } from "react-native";
 
 export default function HostGame() {
-  const { sendBroadcast } = useHostGame();
+  const { promptSetId } = useLocalSearchParams();
+  const { sendBroadcast, buzzes, clearBuzzes } = useHostGame();
+  const players = usePlayersRealtime();
 
   // Host either sees the prompt screen or the leaderboard
   const [gameState, setGameState] = useState("ACTIVE");
 
-  // You will fill this in later with your prompt system
-  const [prompt, setPrompt] = useState(null);
+  // Host may also see the scoreboard
+  const [scoreboardVisible, setScoreboardVisible] = useState(false);
+
+  // Prompt set management
+  //const [prompt, setPrompt] = useState(null);
+  const selectedSet = promptSets.find(set => set.id === promptSetId) || promptSets[0];
+  const { currentPrompt, isLastPrompt, nextPrompt, promptNumber, totalPrompts } = usePromptManager(selectedSet);
 
   // Hook controlling the 3-second wait when NEXT is triggered
   const { waiting, ready } = useNextWait(gameState);
+
+  // Control the point awarding states
+  const [awardModalVisible, setAwardModalVisible] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // ------------------------
   // BUTTON HANDLERS
   // ------------------------
 
+  function handleSelectPlayer(player) {
+    setSelectedPlayer(player);
+    setAwardModalVisible(true);
+  }
+
+  async function handleAwardPoints(playerId, amount) {
+    // find current score from selectedPlayer (or refetch)
+    const currentScore = selectedPlayer?.score ?? 0;
+    await awardPoints(playerId, currentScore, amount);
+    setAwardModalVisible(false);
+    setSelectedPlayer(null);
+  }
+
   async function handleNext() {
-    // Load next prompt here
-    // e.g. setPrompt(nextPrompt)
-    // -------------------------
-    //   YOUR PROMPT LOADING
-    //   goes here
-    // -------------------------
-
-    await sendBroadcast("NEXT", { time: Date.now() });
-
+    if (isLastPrompt) {
+      await handleEnd();
+      return;
+    }
+    const nextPromptIndex = promptNumber;
+    const nextPromptText = selectedSet?.prompts[nextPromptIndex];
+    await sendBroadcast("NEXT", { time: Date.now(), prompt: nextPromptText });
+    nextPrompt();
     // Restart the 3-second wait
     setGameState("ACTIVE");
+    clearBuzzes()
   }
 
   async function handleDisable() {
     await sendBroadcast("EXPIRE", { time: Date.now() });
-    // IMPORTANT: this does NOT change the host UI state.
     // Players' buzzers are disabled, but host remains ACTIVE.
   }
 
   async function handleEnd() {
     await sendBroadcast("END", { time: Date.now() });
     setGameState("END");
-    router.push("/host/leaderboard");
+    //router.push("/host/leaderboard");
+  }
+
+  function handleSelectPlayerFromBuzz(playerId: string) {
+    // Fetch the player data
+    const player = players.find(p => p.id === playerId);
+    if (player) {
+      setSelectedPlayer(player);
+      setAwardModalVisible(true);
+    }
   }
 
   // ------------------------
@@ -52,13 +92,14 @@ export default function HostGame() {
 
   function renderPromptArea() {
     if (gameState === "END") {
-      return (
+    return (
         <View style={{ marginTop: 30 }}>
-          {/* Your leaderboard component */}
-          <Text style={{ fontSize: 24 }}>[Leaderboard goes here]</Text>
+        <Text style={{ fontSize: 28, marginBottom: 10 }}>Final Standings</Text>
+        <Leaderboard hostMode={false} onSelectPlayer={handleSelectPlayer}/>
         </View>
-      );
+    );
     }
+
 
     if (waiting) {
       return (
@@ -70,9 +111,11 @@ export default function HostGame() {
 
     return (
       <View style={{ marginTop: 20 }}>
-        {/* Your prompt display goes here */}
+        <Text style={{ fontSize: 16, color: "#667", marginBottom: 8 }}>
+            Question {promptNumber} of {totalPrompts}
+        </Text>
         <Text style={{ fontSize: 24 }}>
-          {prompt ?? "[Prompt goes here]"}
+          {currentPrompt ?? "[No prompt selected]"}
         </Text>
       </View>
     );
@@ -80,13 +123,27 @@ export default function HostGame() {
 
   function renderBuzzList() {
     if (gameState === "END") return null;
+    return <BuzzList buzzes={buzzes} onSelectPlayer={handleSelectPlayerFromBuzz} />;
+  }
 
-    return (
-      <View style={{ marginTop: 25 }}>
-        {/* Your buzz list component */}
-        <Text style={{ fontSize: 20 }}>[Buzzed players go here]</Text>
-      </View>
-    );
+  function renderScoreboardButton() {
+    if (gameState === "END") return null;
+    return <Button title="View Scoreboard" onPress={() => setScoreboardVisible(true)}/>;
+  }
+
+  function renderScoreboard() {
+    if (gameState === "END") return null;
+    return <ScoreboardModal
+          visible={scoreboardVisible}
+          players={players}
+          allowPointAllocation={true}
+          onClose={() => setScoreboardVisible(false)}
+          onSelectPlayer={(player) => {
+            setScoreboardVisible(false);
+            setSelectedPlayer(player);
+            setAwardModalVisible(true);
+          }}
+        />;
   }
 
   // ------------------------
@@ -145,6 +202,17 @@ export default function HostGame() {
           </View>
         )}
 
+        <AwardPointsModal
+            visible={awardModalVisible}
+            player={selectedPlayer}
+            onClose={() => setAwardModalVisible(false)}
+            onAward={(delta) => {if (!selectedPlayer) return; handleAwardPoints(selectedPlayer.id, delta)}}
+        />
+
+        {/* Scoreboard Modal */}
+        {renderScoreboard()}
+        {renderScoreboardButton()}
+        
         {/* TEMPORARY DEBUG NAV */}
         <View style={{ marginTop: 20 }}>
           <Button title="Back" onPress={() => router.back()} />

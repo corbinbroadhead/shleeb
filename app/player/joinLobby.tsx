@@ -4,7 +4,7 @@ import { useJoinForm } from "../../hooks/useJoinForm";
 import { usePlayerGame } from "../../hooks/usePlayerGame";
 
 export default function JoinLobby() {
-  const { joinGame, buzz, loading, playerId } = usePlayerGame();
+  const { joinGame, playerId, loading } = usePlayerGame();
   const form = useJoinForm(joinGame);
   const title = "Welcome, "+form.name+"!";
   if (form.hasJoined) {

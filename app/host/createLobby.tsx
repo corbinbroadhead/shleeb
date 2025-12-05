@@ -1,10 +1,13 @@
 import DestructiveButton from "@/components/DestructiveButton";
+import PlayerListItem from "@/components/PlayerListItem";
+import PromptSetPicker from "@/components/PromptSetPicker";
 import StandardButton from "@/components/StandardButton";
+import { PromptSet } from "@/data/promptSets";
 import { useHostGame } from "@/hooks/useHostGame";
 import { supabase } from "@/utils/supabase";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Button, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Button, ScrollView, Text, View } from "react-native";
 
 export default function CreateLobby() {
   const { createSession, players, sendBroadcast } = useHostGame();
@@ -12,20 +15,33 @@ export default function CreateLobby() {
   const [loading, setLoading] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPromptSet, setSelectedPromptSet] = useState<PromptSet | null>(null);
 
-  // guard to ensure we only auto-start once per mount (protects against HMR double-run)
   const startedRef = useRef(false);
 
   async function handleStartGame() {
-  // Notify all players
-  await sendBroadcast("START", { time: Date.now() });
+    // Validate prompt set is selected
+    if (!selectedPromptSet) {
+      Alert.alert("Select Prompt Set", "Please select a prompt set before starting the game.");
+      return;
+    }
 
-  // Move host to game screen
-  router.push('/host/game');
-}
+    // Notify all players
+    await sendBroadcast("START", { time: Date.now(), prompt: selectedPromptSet.prompts[0] });
+
+    // Move host to game screen with prompt set ID
+    router.push({
+      pathname: '/host/game',
+      params: { promptSetId: selectedPromptSet.id }
+    });
+  }
+
+  async function handleKickPlayer(playerId: string) {
+    await sendBroadcast("KICK", {playerId: playerId});
+    return;
+  }
 
   async function initSession() {
-    // guard (extra protection)
     if (startedRef.current) return;
     startedRef.current = true;
 
@@ -44,13 +60,11 @@ export default function CreateLobby() {
     }
   }
 
-  // auto-run once when this screen mounts
   useEffect(() => {
     initSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty: run once on mount
+  }, []);
 
-  // BEFORE session is ready: show loading state (auto-starting)
+  // Loading/error states (same as before)
   if (!sessionReady) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20, paddingTop: 70 }}>
@@ -70,7 +84,6 @@ export default function CreateLobby() {
             <Button title="Close" onPress={() => router.back()} />
           </>
         ) : (
-          // If not loading and no error (rare), show a fallback button to start manually
           <>
             <Text style={{ fontSize: 24, marginBottom: 20 }}>Create Lobby</Text>
             <Button title="Start New Lobby" onPress={initSession} />
@@ -80,7 +93,7 @@ export default function CreateLobby() {
     );
   }
 
-  // AFTER sessionReady === true: show lobby active UI (same route)
+  // Lobby active UI
   return (
     <View style={{ flex: 1 }}>
       <View style={{height: 50, backgroundColor: "purple"}}></View>
@@ -93,18 +106,25 @@ export default function CreateLobby() {
         }}
       >
         <View>
-
           <Text style={{ fontSize: 24, marginBottom: 10 }}>Lobby Active</Text>
           <Text style={{ marginBottom: 20 }}>Waiting for players...</Text>
 
-          <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          {/* Prompt Set Picker - Added here! */}
+          <PromptSetPicker
+            selectedSet={selectedPromptSet}
+            onSelectSet={setSelectedPromptSet}
+          />
+
+          <Text style={{ fontSize: 18, marginBottom: 10, marginTop: 20 }}>
             Players: {players.length}
           </Text>
 
           {players.map((p: any) => (
-            <Text key={p.id} style={{ marginVertical: 4 }}>
-              • {p.name || p.id}
-            </Text>
+            <PlayerListItem
+              key={p.id}
+              player={p}
+              onKick={handleKickPlayer}
+            />
           ))}
         </View>
 

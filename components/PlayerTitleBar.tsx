@@ -1,3 +1,4 @@
+//import { usePlayerGame } from '@/hooks/usePlayerGame';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import { router } from "expo-router";
@@ -9,12 +10,14 @@ type Props = {
   title: string;
   backgroundColor?: string;
   buttonAction?: "EXIT" | "BACK";
+  //playerId?: string;
 };
 
 export default function PlayerTitleBar({
   title,
   backgroundColor = "purple",
   buttonAction = "EXIT",
+  //playerId,
 }: Props) {
   const icon =
     buttonAction === "BACK" ? (
@@ -25,14 +28,18 @@ export default function PlayerTitleBar({
   const buttonBackgroundColor = buttonAction === "BACK" ? "white" : "red"
   const showConfirmation = buttonAction === "BACK" ? false : true;
   const confirmationMessage = showConfirmation ? "Exit the lobby?" : ""
-
+  //const { leave } = usePlayerGame();
+  function handleOnClick() {
+    //leave();
+    router.back();
+  };
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.left}>
         <IconButton
           icon={icon}
           size={32}
-          onClick={() => router.back()}
+          onClick={handleOnClick}
           backgroundColor={buttonBackgroundColor}
           showConfirmation={showConfirmation}
           actionMessage={confirmationMessage}

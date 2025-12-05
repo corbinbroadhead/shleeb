@@ -1,9 +1,13 @@
 import StandardButton from "@/components/StandardButton";
 import TitleBar from "@/components/TitleBar";
-import { router } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { Alert, ScrollView, View } from "react-native";
 
 export default function Index() {
+  const { notice } = useLocalSearchParams();
+  if (notice == "KICKED"){
+    Alert.alert(notice, "You were removed from the game by the host.");
+  }
   return (
     <View>
       <View style={{height: 100}}>

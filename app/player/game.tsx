@@ -1,13 +1,25 @@
 import Buzzer from "@/components/Buzzer";
+import Leaderboard from "@/components/Leaderboard";
+import ScoreboardModal from "@/components/ScoreboardModal";
 import useNextWait from "@/hooks/useNextWait";
 import { usePlayerGame } from "@/hooks/usePlayerGame";
-import { ScrollView, Text, View } from "react-native";
+import { usePlayersRealtime } from "@/hooks/usePlayersRealtime";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { Button, ScrollView, Text, View } from "react-native";
 
 export default function PlayerGame() {
-  const { game, buzz } = usePlayerGame();
+  const { playerId, playerName, initialPrompt } = useLocalSearchParams();
+  const { game, buzz, currentPrompt } = usePlayerGame();
+  const players = usePlayersRealtime();
+  const [scoreboardVisible, setScoreboardVisible] = useState(false);
 
   // Handles the 3-second “Next prompt incoming…” animation
   const { waiting, ready } = useNextWait(game);
+
+  useEffect(() => {
+    setScoreboardVisible(false);
+  }, [game]);
 
   const renderNext = () => {
     if (waiting) {
@@ -21,8 +33,20 @@ export default function PlayerGame() {
     if (ready) {
       return (
         <View>
-          <Text>PROMPT</Text>
-          <Buzzer text="Press to Buzz!" onClick={buzz} enabled={true} />
+          <Text style={{ alignItems: "center", padding: 20 }}>
+            {currentPrompt || initialPrompt}
+          </Text>
+          <Button
+            title="View Scoreboard"
+            onPress={() => setScoreboardVisible(true)}
+          />
+          <ScoreboardModal
+            visible={scoreboardVisible}
+            players={players}
+            allowPointAllocation={false}
+            onClose={() => setScoreboardVisible(false)}
+          />
+          <Buzzer text="Press to Buzz!" onClick={()=>buzz(playerId, playerName)} enabled={true} />
         </View>
       );
     }
@@ -32,16 +56,30 @@ export default function PlayerGame() {
 
   const renderExpire = () => (
     <View>
-      <Text>PROMPT</Text>
-      <Buzzer text="Buzzer Disabled" onClick={buzz} enabled={false} />
+      <Text style={{ alignItems: "center", padding: 20 }}>
+        {currentPrompt || initialPrompt}
+      </Text>
+      <Button
+        title="View Scoreboard"
+        onPress={() => setScoreboardVisible(true)}
+      />
+      <ScoreboardModal
+        visible={scoreboardVisible}
+        players={players}
+        allowPointAllocation={false}
+        onClose={() => setScoreboardVisible(false)}
+      />
+      <Buzzer text="Buzzer Disabled" onClick={()=>buzz(playerId, playerName)} enabled={false} />
     </View>
   );
 
-  const renderEnd = () => (
+    const renderEnd = () => (
     <View>
-      <Text>[End screen goes here]</Text>
+        <Text style={{ fontSize: 28, marginBottom: 10 }}>Final Standings</Text>
+        <Leaderboard hostMode={false} />
     </View>
-  );
+    );
+
 
   const renderContent = () => {
     if (game === "NEXT") return renderNext();
