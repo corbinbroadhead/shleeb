@@ -8,19 +8,16 @@ import { Vibration } from 'react-native';
 import { supabase } from "../utils/supabase";
 import { useShleebChannel } from "./useShleebChannel";
 
-export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName?: string | null) {
+export function usePlayerGame() {
   const channelRef = useShleebChannel();
   const { buzzEnabled } = useBuzzer();
   const { player, updatePlayerName, updatePlayerImage, updatePlayerId } = usePlayer();
 
-  //const [playerId, setPlayerId] = useState<string | null>(initialPlayerId || null);
-  //const playerIdRef = useRef<string | null>(null);
-
-  //const [storedPlayerName, setStoredPlayerName] = useState<string | null>(null);
-  //const storedPlayerNameRef = useRef<string | null>(null);
-
   const [game, setGame] = useState<"NEXT" | "EXPIRE" | "END" | "LOADING">("NEXT");
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
+
+  // playerRef so the kicking receiver works
+  const playerRef = useRef(player);
 
   // ensure we only attach handlers once for the lifetime of the channel
   const attachedRef = useRef(false);
@@ -31,18 +28,15 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
     }
   }
 
+  // ensure the playerRef stays up to date
+  useEffect(() => {
+    playerRef.current = player;
+  }, [player]);
+
   // Debug logging of game changes
   useEffect(() => {
     console.log("[player] game UPDATED →", game);
   }, [game]);
-
-  //useEffect(()=> {
-  //  playerIdRef.current = playerId;
-  //}, [playerId]);
-
-  //useEffect(()=> {
-  //  storedPlayerNameRef.current = storedPlayerName;
-  //}, [storedPlayerName]);
 
   useEffect(() => {
     console.log("[player] useEffect RUNNING");
@@ -89,7 +83,6 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
         console.log("[player] Current prompt set to: ",currentPrompt);
         setGame("LOADING");
         setTimeout(() => setGame("NEXT"), 0);
-        //setGame("NEXT");
       });
 
       // EXPIRE
@@ -107,7 +100,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
       // KICK
       channel.on("broadcast", { event: "KICK" }, async (payload) => {
         console.log("[player] KICK received, player: ",payload.payload.playerId);
-          if (player.id == payload.payload.playerId) {
+          if (playerRef.current.id == payload.payload.playerId) {
           try {
             router.push({pathname:"/", params:{notice: "KICKED"}});
           } catch (err) {
@@ -186,17 +179,10 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
       .single();
 
     if (error) return { success: false, error };
-
-    //console.log("[player] Setting playerId to: ", data.id)
-    //console.log("[player] Setting playerName to:", playerName);
-    //setPlayerId(data.id);
-    //setStoredPlayerName(playerName);
     console.log("[player] CONTEXT: updating player name:",playerName);
     console.log("[player] CONTEXT: updating player id:",data.id);
     updatePlayerName(playerName);
     updatePlayerId(data.id);
-    //console.log("[player] CONTEXT: name after call:",player.name);
-    //console.log("[player] CONTEXT: id after call:",player.id);
     return { success: true, id: data.id };
   }
 
@@ -207,9 +193,11 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
   }
 
   // --- Buzz ---
-  function buzz(id, playerName) {
-    if (!channelRef.current || !id) return;
+  function buzz() {
+    if (!channelRef.current || !player.id) return;
     console.log("[player] Sending BUZZ event");
+    const id = player.id;
+    const playerName = player.name;
     try {
       buzzerFeedback();
       channelRef.current.send({
