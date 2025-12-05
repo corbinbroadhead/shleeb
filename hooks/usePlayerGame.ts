@@ -1,5 +1,6 @@
 // usePlayerGame.ts
 import { useBuzzer } from "@/contexts/buzzerContext";
+import { usePlayer } from "@/contexts/playerContext";
 import * as Haptics from 'expo-haptics';
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -10,12 +11,13 @@ import { useShleebChannel } from "./useShleebChannel";
 export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName?: string | null) {
   const channelRef = useShleebChannel();
   const { buzzEnabled } = useBuzzer();
+  const { player, updatePlayerName, updatePlayerImage, updatePlayerId } = usePlayer();
 
-  const [playerId, setPlayerId] = useState<string | null>(initialPlayerId || null);
-  const playerIdRef = useRef<string | null>(null);
+  //const [playerId, setPlayerId] = useState<string | null>(initialPlayerId || null);
+  //const playerIdRef = useRef<string | null>(null);
 
-  const [storedPlayerName, setStoredPlayerName] = useState<string | null>(null);
-  const storedPlayerNameRef = useRef<string | null>(null);
+  //const [storedPlayerName, setStoredPlayerName] = useState<string | null>(null);
+  //const storedPlayerNameRef = useRef<string | null>(null);
 
   const [game, setGame] = useState<"NEXT" | "EXPIRE" | "END" | "LOADING">("NEXT");
   const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
@@ -34,13 +36,13 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
     console.log("[player] game UPDATED →", game);
   }, [game]);
 
-  useEffect(()=> {
-    playerIdRef.current = playerId;
-  }, [playerId]);
+  //useEffect(()=> {
+  //  playerIdRef.current = playerId;
+  //}, [playerId]);
 
-  useEffect(()=> {
-    storedPlayerNameRef.current = storedPlayerName;
-  }, [storedPlayerName]);
+  //useEffect(()=> {
+  //  storedPlayerNameRef.current = storedPlayerName;
+  //}, [storedPlayerName]);
 
   useEffect(() => {
     console.log("[player] useEffect RUNNING");
@@ -65,13 +67,13 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
       // START → navigate
       channel.on("broadcast", { event: "START" }, (payload) => {
         console.log("[player] START received → navigating");
-        console.log("[player] playerId at navigation time:", playerId);
+        console.log("[player] playerId at navigation time:", player.id);
         setCurrentPrompt(payload.payload.prompt);
         phaseChangeFeedback();
         try {
           router.push({
             pathname: "/player/game",
-            params: { playerId: playerIdRef.current, playerName: storedPlayerNameRef.current, initialPrompt: payload.payload.prompt }
+            params: { playerId: player.id, playerName: player.name, initialPrompt: payload.payload.prompt }
           });
         } catch (err) {
           console.warn("[player] router.push failed:", err);
@@ -105,7 +107,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
       // KICK
       channel.on("broadcast", { event: "KICK" }, async (payload) => {
         console.log("[player] KICK received, player: ",payload.payload.playerId);
-          if (playerIdRef.current == payload.payload.playerId) {
+          if (player.id == payload.payload.playerId) {
           try {
             router.push({pathname:"/", params:{notice: "KICKED"}});
           } catch (err) {
@@ -185,10 +187,16 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
 
     if (error) return { success: false, error };
 
-    console.log("[player] Setting playerId to: ", data.id)
-    console.log("[player] Setting playerName to:", playerName);
-    setPlayerId(data.id);
-    setStoredPlayerName(playerName);
+    //console.log("[player] Setting playerId to: ", data.id)
+    //console.log("[player] Setting playerName to:", playerName);
+    //setPlayerId(data.id);
+    //setStoredPlayerName(playerName);
+    console.log("[player] CONTEXT: updating player name:",playerName);
+    console.log("[player] CONTEXT: updating player id:",data.id);
+    updatePlayerName(playerName);
+    updatePlayerId(data.id);
+    //console.log("[player] CONTEXT: name after call:",player.name);
+    //console.log("[player] CONTEXT: id after call:",player.id);
     return { success: true, id: data.id };
   }
 
@@ -221,7 +229,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
   // --- Leave ---
   function leave() {
     if (!channelRef.current) return;
-    const id = playerId;
+    const id = player.id;
     console.log("[player] Leaving game, player:",id);
     try {
       channelRef.current.send({
@@ -237,7 +245,7 @@ export function usePlayerGame(initialPlayerId?: string | null, initialPlayerName
   return {
     joinGame,
     buzz,
-    playerId,
+    //playerId,
     game,
     currentPrompt,
     leave

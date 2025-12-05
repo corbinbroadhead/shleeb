@@ -147,11 +147,6 @@ export function useHostGame() {
     setBuzzes([]);
   }
 
-  // Kick unwanted players
-  //async function kick(player) {
-  //
-  //}
-
   // Reset everything
   async function createSession() {
     await supabase.from("players").delete().neq("id", "");

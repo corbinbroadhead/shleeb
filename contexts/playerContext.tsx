@@ -11,6 +11,7 @@ interface PlayerContextValue {
   setPlayer: (player: Player) => void;
   updatePlayerName: (name: string) => void;
   updatePlayerImage: (imageUrl: string) => void;
+  updatePlayerId: (id: string) => void;
 }
 
 const PlayerContext = createContext<PlayerContextValue | undefined>(undefined);
@@ -30,9 +31,13 @@ export const PlayerProvider = ({ children }: { children: ReactNode }) => {
     setPlayer((prev) => ({ ...prev, imageUrl }));
   };
 
+  const updatePlayerId = (id: string) => {
+    setPlayer((prev) => ({ ...prev, id}));
+  };
+
   return (
     <PlayerContext.Provider
-      value={{ player, setPlayer, updatePlayerName, updatePlayerImage }}
+      value={{ player, setPlayer, updatePlayerName, updatePlayerImage, updatePlayerId }}
     >
       {children}
     </PlayerContext.Provider>
