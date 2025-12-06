@@ -38,6 +38,8 @@ export default function CreateLobby() {
 
   async function handleKickPlayer(playerId: string) {
     await sendBroadcast("KICK", {playerId: playerId});
+    console.log("🔴 KICK HANDLER CALLED FOR:", playerId);
+    console.trace();
     return;
   }
 

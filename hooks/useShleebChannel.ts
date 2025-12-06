@@ -18,7 +18,7 @@ export function useShleebChannel() {
       if (status === "SUBSCRIBED") console.log("[shleeb] Connected to shleeb realtime channel");
     });
 
-    return () => supabase.removeChannel(channel);
+    //return () => supabase.removeChannel(channel);
   }, []);
 
   return channelRef;

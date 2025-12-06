@@ -54,6 +54,7 @@ export function usePlayerGame() {
         console.log("[player] Handlers already attached — skipping.");
         return;
       }
+
       attachedRef.current = true;
 
       console.log("[player] Attaching realtime handlers to channel (idempotent).");
@@ -161,7 +162,8 @@ export function usePlayerGame() {
     return () => {
       console.log("[player] CLEANUP: unsubscribing channel and resetting attachedRef");
       try {
-        channel.unsubscribe();
+        //channel.unsubscribe();
+        console.log("Would have unsubscribed!")
       } catch (err) {
         console.warn("[player] channel.unsubscribe() threw:", err);
       }
