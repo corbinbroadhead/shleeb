@@ -31,7 +31,7 @@ export default function DestructiveButton({
 
 const styles = StyleSheet.create({
   button_style: {
-    backgroundColor: "red",
+    backgroundColor: "#DC2626",
     width: "80%",
     height: 50,
     paddingHorizontal: 14,

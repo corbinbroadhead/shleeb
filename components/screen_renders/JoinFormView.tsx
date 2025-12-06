@@ -1,5 +1,14 @@
 import PlayerTitleBar from "@/components/PlayerTitleBar";
-import { Button, ScrollView, Text, TextInput, View } from "react-native";
+import {
+    Keyboard,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from "react-native";
+import StandardButton from "../StandardButton";
 
 interface JoinFormViewProps {
   name: string;
@@ -17,36 +26,76 @@ export default function JoinFormView({
   onSubmit 
 }: JoinFormViewProps) {
   return (
-    <View>
-      <PlayerTitleBar title="Join the Lobby" buttonAction="BACK" />
-      <ScrollView contentContainerStyle={{ width: "100%", height: "100%" }}>
-        <TextInput
-          placeholder="Enter your name"
-          autoCapitalize="none"
-          value={name}
-          onChangeText={onNameChange}
-          style={{
-            width: "100%",
-            padding: 12,
-            borderWidth: 1,
-            borderColor: "#999",
-            borderRadius: 8,
-            marginBottom: 10,
-          }}
-        />
+    <Pressable onPress={() => Keyboard.dismiss()} style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <PlayerTitleBar title="Join the Lobby" buttonAction="BACK" />
 
-        {error && (
-          <Text style={{ color: "red", marginBottom: 10 }}>
-            {error}
-          </Text>
-        )}
+        <ScrollView 
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formContainer}>
+            <TextInput
+              placeholderTextColor="#555"
+              placeholder="Enter your name"
+              autoCapitalize="none"
+              value={name}
+              onChangeText={onNameChange}
+              style={styles.input}
+            />
 
-        <Button
-          title={loading ? "Joining..." : "Join Game"}
-          disabled={loading}
-          onPress={onSubmit}
-        />
-      </ScrollView>
-    </View>
+            {error && (
+              <Text style={styles.errorText}>
+                {error}
+              </Text>
+            )}
+
+            <View style={styles.buttonContainer}>
+              <StandardButton
+                text={loading ? "Joining..." : "Join Game"}
+                onClick={onSubmit}
+              />
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 20,
+  },
+  formContainer: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+  },
+  input: {
+    width: "80%",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#999",
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: "white",
+    fontSize: 16,
+    alignSelf: "center",
+  },
+  errorText: {
+    color: "#DC2626",
+    marginBottom: 10,
+    fontSize: 14,
+  },
+  buttonContainer: {
+    marginTop: 10,
+    alignItems: "center",
+    width: "100%",
+  },
+});

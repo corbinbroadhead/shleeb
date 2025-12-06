@@ -13,7 +13,7 @@ export default function IconButton({
   icon,
   size,
   onClick,
-  backgroundColor = "red",
+  backgroundColor = "#DC2626",
   showConfirmation = false,
   actionMessage = "Are you sure?",
 }: Props) {

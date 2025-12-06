@@ -18,7 +18,7 @@ export default function StandardButton({ text, onClick }: Props) {
 
 const styles = StyleSheet.create({
   button_style: {
-    backgroundColor: "purple",
+    backgroundColor: "#7C3AED",
     width: "80%",
     height: 50,
     paddingHorizontal: 14,
@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.70,
     shadowRadius: 4,
+    alignSelf: "center"
   },
   text_style: {
     color: "white",

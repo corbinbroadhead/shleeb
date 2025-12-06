@@ -39,8 +39,8 @@ export default function PlayerGame() {
           players={players}
           scoreboardVisible={scoreboardVisible}
           onBuzz={buzz}
-          onShowScoreboard={() => setScoreboardVisible(true)}
-          onCloseScoreboard={() => setScoreboardVisible(false)}
+          //onShowScoreboard={() => setScoreboardVisible(true)}
+          //onCloseScoreboard={() => setScoreboardVisible(false)}
         />
       );
     }

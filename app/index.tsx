@@ -2,7 +2,7 @@ import StandardButton from "@/components/StandardButton";
 import TitleBar from "@/components/TitleBar";
 import { router, useLocalSearchParams } from "expo-router";
 //import { useEffect } from "react";
-import { ScrollView, View } from "react-native";
+import { Image, ScrollView, View } from "react-native";
 
 export default function Index() {
   const { notice } = useLocalSearchParams();
@@ -22,8 +22,10 @@ export default function Index() {
           height: "100%",
           justifyContent: "center",
           alignItems: "center",
+          paddingBottom: 140,
         }}
       >
+        <Image resizeMode="contain" style={{height: 300, width: 300, marginBottom: 40}}source={require("../assets/images/Asset 2rb.png")} />
         <StandardButton 
           text="Host" 
           onClick={()=>router.push("/host/createLobby")}>

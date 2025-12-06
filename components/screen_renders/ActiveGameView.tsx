@@ -1,7 +1,7 @@
 // components/screen_renders/ActiveGameView.tsx
 import Buzzer from "@/components/Buzzer";
-import ScoreboardModal from "@/components/ScoreboardModal";
-import { Button, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import LargePromptText from "../LargePromptText";
 
 interface ActiveGameViewProps {
   prompt: string | null;
@@ -9,8 +9,8 @@ interface ActiveGameViewProps {
   players: any[];
   scoreboardVisible: boolean;
   onBuzz: () => void;
-  onShowScoreboard: () => void;
-  onCloseScoreboard: () => void;
+  onShowScoreboard?: () => void;
+  onCloseScoreboard?: () => void;
 }
 
 export default function ActiveGameView({
@@ -23,28 +23,38 @@ export default function ActiveGameView({
   onCloseScoreboard,
 }: ActiveGameViewProps) {
   return (
-    <View>
-      <Text style={{ alignItems: "center", padding: 20, fontSize: 24, textAlign: "center" }}>
-        {prompt || "[Waiting for prompt...]"}
-      </Text>
+    <View style={styles.container}>
+      <View style={styles.promptContainer}>
+        <LargePromptText>
+          {prompt || "[Waiting for prompt...]"}
+        </LargePromptText>
+      </View>
       
-      <Button
-        title="View Scoreboard"
-        onPress={onShowScoreboard}
-      />
-      
-      <ScoreboardModal
-        visible={scoreboardVisible}
-        players={players}
-        allowPointAllocation={false}
-        onClose={onCloseScoreboard}
-      />
-      
-      <Buzzer
-        text={buzzerEnabled ? "Press to Buzz!" : "Buzzer Disabled"}
-        onClick={onBuzz}
-        enabled={buzzerEnabled}
-      />
+      <View style={styles.buzzerContainer}>
+        <Buzzer
+          text={buzzerEnabled ? "Press to Buzz!" : "Buzzer Disabled"}
+          onClick={onBuzz}
+          enabled={buzzerEnabled}
+        />
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  promptContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 0,
+  },
+  buzzerContainer: {
+    alignItems: "center",
+    paddingBottom: 60,
+  },
+});

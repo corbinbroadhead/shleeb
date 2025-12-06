@@ -15,17 +15,17 @@ type Props = {
 
 export default function PlayerTitleBar({
   title,
-  backgroundColor = "purple",
+  backgroundColor = "#7C3AED",
   buttonAction = "EXIT",
 }: Props) {
   const { player } = usePlayer();
   const icon =
     buttonAction === "BACK" ? (
-      <FontAwesome5 name="chevron-circle-left" size={32} color="purple" />
+      <FontAwesome5 name="chevron-circle-left" size={32} color="#7C3AED" />
     ) : (
       <Entypo name="cross" size={32} color="white" />
     );
-  const buttonBackgroundColor = buttonAction === "BACK" ? "white" : "red"
+  const buttonBackgroundColor = buttonAction === "BACK" ? "white" : "#DC2626"
   const showConfirmation = buttonAction === "BACK" ? false : true;
   const confirmationMessage = showConfirmation ? "Exit the lobby?" : ""
   const { leave } = usePlayerGame();

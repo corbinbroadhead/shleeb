@@ -1,6 +1,6 @@
 import AvatarPicker from "@/components/AvatarPicker";
 import PlayerTitleBar from "@/components/PlayerTitleBar";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 interface WaitingLobbyViewProps {
   playerName: string;
@@ -10,21 +10,53 @@ export default function WaitingLobbyView({ playerName }: WaitingLobbyViewProps) 
   const title = `Welcome, ${playerName}!`;
 
   return (
-    <View>
+    <View style={styles.container}>
       <PlayerTitleBar title={title} />
       <ScrollView 
-        contentContainerStyle={{ 
-          width: "100%", 
-          height: "100%", 
-          alignItems: "center" 
-        }}
+        contentContainerStyle={styles.scrollContent}
       >
-        <View style={{ height: 300, width: 300, alignItems: "center" }}>
-          <Text>Waiting for host to start game...</Text>
+        <View style={styles.waitingSection}>
+          <Text style={styles.waitingText}>You're all set! Hang tight while the host gets things ready...</Text>
         </View>
-        <AvatarPicker />
-        <Text>Personalize your avatar while you wait!</Text>
+        
+        <View style={styles.avatarSection}>
+          <AvatarPicker />
+          <Text style={styles.instructionText}>Select your avatar while you wait!</Text>
+        </View>
       </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    padding: 20,
+    paddingTop: 40,
+  },
+  waitingSection: {
+    marginBottom: 40,
+    alignItems: "center",
+  },
+  waitingText: {
+    fontSize: 18,
+    color: "#666",
+    textAlign: "center",
+    fontStyle: "italic",
+  },
+  avatarSection: {
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 400,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: "#888",
+    textAlign: "center",
+    marginTop: 20,
+  },
+});

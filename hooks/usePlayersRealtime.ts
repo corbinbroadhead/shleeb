@@ -9,6 +9,9 @@ export function usePlayersRealtime() {
       .from("players")
       .select("*");
 
+      //console.log("Initial players data:", data);
+      //console.log("First player structure:", data?.[0]);
+
     if (!error && data) setPlayers(data);
   }
 
@@ -42,7 +45,15 @@ export function usePlayersRealtime() {
         "postgres_changes",
         { event: "*", schema: "public", table: "players" },
         (payload) => {
-          setPlayers((prev) => applyDBChange(prev, payload));
+          console.log("=== REALTIME EVENT ===");
+          console.log("Event type:", payload.eventType);
+          console.log("New row:", payload.new);
+          console.log("Old row:", payload.old);
+          setPlayers((prev) => {
+            const updated = applyDBChange(prev, payload);
+            console.log("Players after update:", updated);
+            return updated;
+          });
         }
       )
       .subscribe();

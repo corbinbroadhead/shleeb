@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, useWindowDimensions } from "react-native";
 
 type Props = {
   text?: string;
@@ -7,10 +7,17 @@ type Props = {
 };
 
 export default function Buzzer({ text, onClick, enabled=true }: Props) {
+  const { width } = useWindowDimensions();
+  const size = Math.min(width * 0.8, 350); // 80% of screen width, max 350
+
   return (
     <Pressable
       onPress={enabled ? onClick : undefined}
-      style={enabled? styles.button_style : styles.button_style_disabled}
+      style={[
+        styles.button_style,
+        enabled ? styles.enabled : styles.disabled,
+        { width: size, height: size, borderRadius: size / 2 }
+      ]}
     >
       <Text style={styles.text_style}>{text}</Text>
     </Pressable>
@@ -19,28 +26,19 @@ export default function Buzzer({ text, onClick, enabled=true }: Props) {
 
 const styles = StyleSheet.create({
   button_style: {
-    backgroundColor: "purple",
-    width: "95%",
-    height: 350,
-    paddingHorizontal: 16,
     justifyContent: "center",
-    borderRadius: 200,
+    alignItems: "center",
     shadowColor: "rgba(17, 12, 46, 0.15)",
     shadowOffset: { width: 10, height: 10 },
     shadowOpacity: 0.90,
     shadowRadius: 8,
+    alignSelf: "center",
   },
-  button_style_disabled: {
+  enabled: {
+    backgroundColor: "#7C3AED",
+  },
+  disabled: {
     backgroundColor: "gray",
-    width: "95%",
-    height: "95%",
-    paddingHorizontal: 16,
-    justifyContent: "center",
-    borderRadius: 200,
-    shadowColor: "rgba(17, 12, 46, 0.15)",
-    shadowOffset: { width: 10, height: 10 },
-    shadowOpacity: 0.90,
-    shadowRadius: 8,
   },
   text_style: {
     color: "white",

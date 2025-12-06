@@ -1,4 +1,5 @@
 import DestructiveButton from "@/components/DestructiveButton";
+import HeaderText from "@/components/HeaderText";
 import PlayerListItem from "@/components/PlayerListItem";
 import PromptSetPicker from "@/components/PromptSetPicker";
 import StandardButton from "@/components/StandardButton";
@@ -38,8 +39,6 @@ export default function CreateLobby() {
 
   async function handleKickPlayer(playerId: string) {
     await sendBroadcast("KICK", {playerId: playerId});
-    console.log("🔴 KICK HANDLER CALLED FOR:", playerId);
-    console.trace();
     return;
   }
 
@@ -78,7 +77,7 @@ export default function CreateLobby() {
           </>
         ) : error ? (
           <>
-            <Text style={{ fontSize: 20, color: "red", marginBottom: 12 }}>
+            <Text style={{ fontSize: 20, color: "#DC2626", marginBottom: 12 }}>
               {error}
             </Text>
             <Button title="Retry" onPress={initSession} />
@@ -98,72 +97,63 @@ export default function CreateLobby() {
   // Lobby active UI
   return (
     <View style={{ flex: 1 }}>
-      <View style={{height: 50, backgroundColor: "purple"}}></View>
+      <View style={{ height: 50, backgroundColor: "#7C3AED" }} />
 
+      {/* Scrollable content */}
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
           padding: 20,
-          justifyContent: "space-between",
         }}
       >
-        <View>
-          <Text style={{ fontSize: 24, marginBottom: 10 }}>Lobby Active</Text>
-          <Text style={{ marginBottom: 20 }}>Waiting for players...</Text>
+        <HeaderText style={{ fontSize: 22, color: "#7C3AED", marginBottom: 8}}>Lobby Active</HeaderText>
+        <Text style={{ marginBottom: 20 }}>Waiting for players...</Text>
 
-          {/* Prompt Set Picker - Added here! */}
-          <PromptSetPicker
-            selectedSet={selectedPromptSet}
-            onSelectSet={setSelectedPromptSet}
-          />
+        {/* Prompt Set Picker */}
+        <PromptSetPicker
+          selectedSet={selectedPromptSet}
+          onSelectSet={setSelectedPromptSet}
+        />
 
-          <Text style={{ fontSize: 18, marginBottom: 10, marginTop: 20 }}>
-            Players: {players.length}
-          </Text>
+        <HeaderText style={{ fontSize: 18, marginBottom: 10, marginTop: 20 }}>
+          Players: {players.length}
+        </HeaderText>
 
-          {players.map((p: any) => (
-            <PlayerListItem
-              key={p.id}
-              player={p}
-              onKick={handleKickPlayer}
-            />
-          ))}
-        </View>
-
-        {/* Bottom buttons */}
-        <View
-          style={{
-            width: "100%",
-            alignItems: "center",
-            marginBottom: 20,
-          }}
-        >
-          <StandardButton onClick={handleStartGame} text="Start Game" />
-
-          <DestructiveButton
-            text="Close Lobby"
-            onClick={async () => {
-              try {
-                if (players.length === 0) {
-                  router.back();
-                  return;
-                }
-
-                const ids = players.map((p: any) => p.id);
-                const { data, error } = await supabase
-                  .from("players")
-                  .delete()
-                  .in("id", ids);
-
-                console.log({ data, error });
-                router.back();
-              } catch (exceptionVar) {
-                console.log(exceptionVar);
-              }
-            }}
-          />
-        </View>
+        {players.map((p: any) => (
+          <PlayerListItem key={p.id} player={p} onKick={handleKickPlayer} />
+        ))}
       </ScrollView>
+
+      {/* Bottom buttons */}
+      <View
+        style={{
+          padding: 20,
+          borderTopWidth: 1,
+          borderTopColor: "#ccc",
+          backgroundColor: "white",
+          alignItems: "center",
+        }}
+      >
+        <StandardButton onClick={handleStartGame} text="Start Game" />
+        <DestructiveButton
+          text="Close Lobby"
+          onClick={async () => {
+            try {
+              if (players.length === 0) {
+                router.back();
+                return;
+              }
+
+              const ids = players.map((p: any) => p.id);
+              await supabase.from("players").delete().in("id", ids);
+              router.back();
+            } catch (exceptionVar) {
+              console.log(exceptionVar);
+            }
+          }}
+        />
+      </View>
     </View>
   );
+
 }

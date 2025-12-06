@@ -1,10 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { getAvatarSource } from "@/utils/avatarHelper";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 interface ScoreboardItemProps {
   player: {
     id: string;
     name: string;
     score: number;
+    avatar_id?: number;
   };
   rank: number;
   allowPointAllocation: boolean;
@@ -23,6 +25,13 @@ export default function ScoreboardItem({ player, rank, allowPointAllocation, onP
     >
       <View style={styles.leftSection}>
         <Text style={styles.rankText}>{rank}</Text>
+        
+        {/* Avatar */}
+        <Image
+          source={getAvatarSource(player.avatar_id || 0)}
+          style={styles.avatar}
+        />
+        
         <Text style={styles.nameText}>{player.name}</Text>
       </View>
       <Text style={styles.scoreText}>{player.score}</Text>
@@ -69,6 +78,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginRight: 12,
     width: 30,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
   },
   nameText: {
     fontSize: 18,

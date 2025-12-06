@@ -1,6 +1,7 @@
 import { PromptSet, promptSets } from "@/data/promptSets";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import HeaderText from "./HeaderText";
 
 interface PromptSetPickerProps {
   selectedSet: PromptSet | null;
@@ -12,7 +13,7 @@ export default function PromptSetPicker({ selectedSet, onSelectSet }: PromptSetP
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Prompt Set:</Text>
+      <HeaderText style={styles.label}>Prompt Set:</HeaderText>
       
       {/* Dropdown button */}
       <Pressable
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 8,
   },
   dropdownButton: {

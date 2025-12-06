@@ -27,9 +27,9 @@ export function useHostGame() {
     // In Supabase 2.x, channel.on() returns the channel,
     // so we must track the handler function ourselves.
     const handler = (event) => {
-      const { id, playerName, timestamp } = event.payload;
+      const { id, playerName, avatarId, promptStartTime, timestamp } = event.payload;
       const playerId = id;
-      console.log("[host] BUZZ RECEIVED:", playerId, playerName, timestamp);
+      console.log("[host] BUZZ RECEIVED:", playerId, playerName, promptStartTime, timestamp);
 
       setBuzzes((prev) => {
         // Ignore duplicate buzzes from the same player
@@ -42,9 +42,9 @@ export function useHostGame() {
         if (prev.length === 0) {
           buzzerFeedback();
         }
-
+        console.log("><>< PST: ",promptStartTime);
         // Return the updated buzz array sorted by timestamp
-        return [...prev, { playerId, playerName, timestamp }].sort(
+        return [...prev, { playerId, playerName, avatarId, promptStartTime, timestamp }].sort(
           (a, b) => a.timestamp - b.timestamp
         );
       });

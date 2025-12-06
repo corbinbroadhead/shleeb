@@ -5,7 +5,9 @@ import BuzzItem from "./BuzzItem";
 interface Buzz {
   playerId: string;
   timestamp: number;
+  avatarId: number;
   playerName?: string;
+  promptStartTime?: number;
 }
 
 interface BuzzListProps {
@@ -25,18 +27,20 @@ export default function BuzzList({ buzzes, onSelectPlayer }: BuzzListProps) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Buzzed Players:</Text>
-      {buzzes.map((buzz, index) => (
+    <View style={[styles.container, { overflow: "visible" }]}>
+        <Text style={styles.title}>Buzzed Players:</Text>
+        {buzzes.map((buzz, index) => (
         <BuzzItem
-          key={buzz.playerId}
-          playerId={buzz.playerId}
-          playerName={buzz.playerName}
-          timestamp={buzz.timestamp}
-          index={index}
-          onPress={onSelectPlayer}
+            key={buzz.playerId}
+            playerId={buzz.playerId}
+            playerName={buzz.playerName}
+            avatarId={buzz.avatarId}
+            timestamp={buzz.timestamp}
+            promptStartTime={buzz.promptStartTime}
+            index={index}
+            onPress={onSelectPlayer}
         />
-      ))}
+        ))}
     </View>
   );
 }
@@ -46,9 +50,10 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
+    color: "#161616ff"
   },
   emptyText: {
     fontSize: 20,
